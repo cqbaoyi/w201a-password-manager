@@ -237,13 +237,3 @@ function hasSequentialCharacters(password) {
 }
 
 
-/**
- * Get a random character from a character set
- * @param {string} charSet - Character set
- * @returns {string} Random character
- */
-function getRandomChar(charSet) {
-  const randomBytes = new Uint8Array(1);
-  crypto.getRandomValues(randomBytes);
-  return charSet[randomBytes[0] % charSet.length];
-}

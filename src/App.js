@@ -9,6 +9,7 @@ const App = () => {
   const [encryptionKey, setEncryptionKey] = useState(null);
   const [error, setError] = useState(null);
   const [sessionTimeout, setSessionTimeoutState] = useState(null);
+  const [displayTimeRemaining, setDisplayTimeRemaining] = useState(null);
 
   // Session management
   const SESSION_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -18,6 +19,7 @@ const App = () => {
     setEncryptionKey(null);
     setIsAuthenticated(false);
     setSessionTimeoutState(null);
+    setDisplayTimeRemaining(null);
     setSessionTimeout(0);
   }, []);
 
@@ -97,6 +99,28 @@ const App = () => {
     };
   }, [isAuthenticated, SESSION_DURATION]);
 
+  // Update display time every second
+  useEffect(() => {
+    if (!isAuthenticated || !sessionTimeout) {
+      setDisplayTimeRemaining(null);
+      return;
+    }
+
+    const updateDisplayTime = () => {
+      const remaining = sessionTimeout - Date.now();
+      setDisplayTimeRemaining(Math.max(0, remaining));
+    };
+
+    // Update immediately
+    updateDisplayTime();
+
+    // Update every second
+    const intervalId = setInterval(updateDisplayTime, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated, sessionTimeout]);
 
   const handleLogin = (key) => {
     setEncryptionKey(key);
@@ -110,9 +134,7 @@ const App = () => {
   };
 
   const getTimeUntilTimeout = () => {
-    if (!sessionTimeout) return null;
-    const remaining = sessionTimeout - Date.now();
-    return Math.max(0, remaining);
+    return displayTimeRemaining && displayTimeRemaining > 0 ? displayTimeRemaining : null;
   };
 
   const formatTimeRemaining = (milliseconds) => {
