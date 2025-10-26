@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { generateSalt, deriveKey, verifyMasterPassword } from '../utils/crypto';
 import { vaultExists, setVaultSalt, setVaultData, getVaultSalt, getVaultData } from '../utils/storage';
 import { validateMasterPassword } from '../utils/validation';
+import { calculatePasswordStrength } from '../utils/passwordGenerator';
 import styles from './LoginScreen.module.css';
 
 const LoginScreen = ({ onLogin, onError }) => {
@@ -19,10 +20,10 @@ const LoginScreen = ({ onLogin, onError }) => {
   }, []);
 
   useEffect(() => {
-    // Validate password strength for new vaults
+    // Calculate password strength for new vaults
     if (isNewVault && masterPassword) {
-      const validation = validateMasterPassword(masterPassword);
-      setPasswordStrength(validation);
+      const strength = calculatePasswordStrength(masterPassword);
+      setPasswordStrength(strength);
     } else {
       setPasswordStrength(null);
     }
