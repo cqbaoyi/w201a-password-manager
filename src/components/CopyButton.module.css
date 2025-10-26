@@ -1,0 +1,147 @@
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 28px;
+  white-space: nowrap;
+}
+
+.copyButton:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.copyButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.copyButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.copyButton.copied {
+  background: var(--success-color);
+  animation: pulse var(--transition-fast) ease-out;
+}
+
+.copyIcon,
+.checkmark {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.buttonText {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Size variants */
+.copyButton.small {
+  padding: var(--spacing-xs);
+  font-size: 0.625rem;
+  min-height: 24px;
+}
+
+.copyButton.small .buttonText {
+  display: none;
+}
+
+.copyButton.large {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  min-height: 32px;
+}
+
+/* Color variants */
+.copyButton.secondary {
+  background: var(--secondary-color);
+}
+
+.copyButton.secondary:hover:not(:disabled) {
+  background: #475569;
+}
+
+.copyButton.outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.copyButton.outline:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: white;
+}
+
+.copyButton.outline.copied {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .copyButton {
+    padding: var(--spacing-xs);
+    font-size: 0.625rem;
+    min-height: 24px;
+  }
+  
+  .buttonText {
+    font-size: 0.625rem;
+  }
+  
+  .copyIcon,
+  .checkmark {
+    font-size: 0.75rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.copyButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

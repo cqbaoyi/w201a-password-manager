@@ -1,0 +1,57 @@
+# Password Manager - Cursor Rules
+
+## Tech Stack
+- React 18+ with functional components and hooks
+- CSS Modules for styling
+- Web Crypto API for encryption (AES-GCM, PBKDF2)
+- localStorage for data persistence
+
+## Code Style
+- Use functional components with hooks
+- CSS Modules: `ComponentName.module.css`
+- File naming: PascalCase for components, camelCase for utilities
+- Always use `useCallback` for functions in useEffect dependencies
+- Use `useMemo` for expensive calculations
+
+## Security (Critical)
+- Never log passwords or encryption keys
+- Use Web Crypto API for all crypto operations
+- Clear sensitive data from memory after use
+- Validate and sanitize all inputs
+- Use `crypto.getRandomValues()` for randomness
+
+## React Patterns
+```javascript
+// Component structure
+const Component = ({ prop1, onAction }) => {
+  const [state, setState] = useState(initialValue);
+  
+  const handleAction = useCallback((param) => {
+    // Handle action
+  }, [dependency]);
+  
+  useEffect(() => {
+    // Effect logic
+  }, [dependency]);
+  
+  return <div className={styles.container}>...</div>;
+};
+```
+
+## CSS Guidelines
+- Mobile-first responsive design
+- Use CSS custom properties for theming
+- Dark mode support with `prefers-color-scheme`
+- Semantic class names with BEM-like methodology
+
+## Error Handling
+- Always wrap async operations in try-catch
+- Provide user-friendly error messages
+- Never expose sensitive data in errors
+
+## Performance
+- Use `React.memo` for expensive components
+- Proper cleanup in useEffect
+- Avoid unnecessary re-renders
+
+Remember: Security is paramount. Always prioritize user data protection.
