@@ -1,21 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { getSessionTimeout, setSessionTimeout } from '../utils/storage';
-import {
-  SESSION_DURATION,
-  WARNING_TIME,
-  ACTIVITY_RESET_THROTTLE,
-  DISPLAY_UPDATE_INTERVAL,
-} from '../constants/config';
+import { getSessionTimeout } from '../utils/storage';
 
 interface AuthContextType {
   encryptionKey: CryptoKey | null;
   isAuthenticated: boolean;
-  sessionTimeout: number | null;
-  displayTimeRemaining: number | null;
   login: (key: CryptoKey) => void;
   logout: () => void;
-  extendSession: () => void;
-  formatTimeRemaining: (milliseconds: number) => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,29 +25,16 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [sessionTimeout, setSessionTimeoutState] = useState<number | null>(null);
-  const [displayTimeRemaining, setDisplayTimeRemaining] = useState<number | null>(null);
 
   const logout = useCallback(() => {
     setEncryptionKey(null);
     setIsAuthenticated(false);
-    setSessionTimeoutState(null);
-    setDisplayTimeRemaining(null);
-    setSessionTimeout(0);
   }, []);
 
   const login = useCallback((key: CryptoKey) => {
     setEncryptionKey(key);
     setIsAuthenticated(true);
   }, []);
-
-  const extendSession = useCallback(() => {
-    if (isAuthenticated) {
-      const newTimeout = Date.now() + SESSION_DURATION;
-      setSessionTimeout(newTimeout);
-      setSessionTimeoutState(newTimeout);
-    }
-  }, [isAuthenticated]);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -69,107 +46,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Set up session timeout when authenticated
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    let warningTimeoutId: NodeJS.Timeout;
-
-    if (isAuthenticated && encryptionKey) {
-      // Set up session timeout
-      const timeout = Date.now() + SESSION_DURATION;
-      setSessionTimeout(timeout);
-      setSessionTimeoutState(timeout);
-
-      // Set up auto-lock
-      timeoutId = setTimeout(() => {
-        logout();
-      }, SESSION_DURATION);
-
-      // Set up warning (could trigger modal here)
-      warningTimeoutId = setTimeout(() => {
-        // Warning time reached - modal can check this
-      }, SESSION_DURATION - WARNING_TIME);
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      if (warningTimeoutId) clearTimeout(warningTimeoutId);
-    };
-  }, [isAuthenticated, encryptionKey, logout]);
-
-  // Reset session timeout on user activity
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    let lastActivity = Date.now();
-    let resetTimeoutId: NodeJS.Timeout;
-
-    const resetSession = () => {
-      const now = Date.now();
-      if (now - lastActivity < ACTIVITY_RESET_THROTTLE) return;
-      
-      lastActivity = now;
-      const newTimeout = now + SESSION_DURATION;
-      setSessionTimeout(newTimeout);
-      setSessionTimeoutState(newTimeout);
-    };
-
-    const throttledReset = () => {
-      if (resetTimeoutId) clearTimeout(resetTimeoutId);
-      resetTimeoutId = setTimeout(resetSession, ACTIVITY_RESET_THROTTLE);
-    };
-
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    
-    events.forEach(event => {
-      document.addEventListener(event, throttledReset, true);
-    });
-
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, throttledReset, true);
-      });
-      if (resetTimeoutId) clearTimeout(resetTimeoutId);
-    };
-  }, [isAuthenticated]);
-
-  // Update display time every second
-  useEffect(() => {
-    if (!isAuthenticated || !sessionTimeout) {
-      setDisplayTimeRemaining(null);
-      return;
-    }
-
-    const updateDisplayTime = () => {
-      const remaining = sessionTimeout - Date.now();
-      setDisplayTimeRemaining(Math.max(0, remaining));
-    };
-
-    updateDisplayTime();
-    const intervalId = setInterval(updateDisplayTime, DISPLAY_UPDATE_INTERVAL);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isAuthenticated, sessionTimeout]);
-
-  const formatTimeRemaining = (milliseconds: number): string => {
-    const minutes = Math.floor(milliseconds / 60000);
-    const seconds = Math.floor((milliseconds % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const value: AuthContextType = {
     encryptionKey,
     isAuthenticated,
-    sessionTimeout,
-    displayTimeRemaining,
     login,
     logout,
-    extendSession,
-    formatTimeRemaining,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-

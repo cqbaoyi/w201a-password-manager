@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getVaultData, addPasswordEntry, updatePasswordEntry, deletePasswordEntry } from '../utils/storage';
 import { decryptPasswordEntry, encryptPasswordEntry } from '../utils/crypto';
 import { useAuth } from '../contexts/AuthContext';
+import { useSession } from '../contexts/SessionContext';
 import { WARNING_TIME } from '../constants/config';
 import PasswordCard from '../components/PasswordCard';
 import PasswordForm from '../components/PasswordForm';
@@ -14,7 +15,8 @@ type SortBy = 'title' | 'username' | 'url' | 'created' | 'updated';
 
 const VaultPage: React.FC = () => {
   const navigate = useNavigate();
-  const { encryptionKey, logout, displayTimeRemaining, formatTimeRemaining, sessionTimeout } = useAuth();
+  const { encryptionKey, logout } = useAuth();
+  const { displayTimeRemaining, formatTimeRemaining } = useSession();
   const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
   const [filteredPasswords, setFilteredPasswords] = useState<PasswordEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

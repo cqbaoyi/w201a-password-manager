@@ -51,14 +51,3 @@ export interface ValidationResult {
   errors: string[];
 }
 
-export interface SearchValidationResult {
-  isValid: boolean;
-  query?: string;
-  errors?: string[];
-}
-
-export interface ImportData {
-  salt: string;
-  data: EncryptedPasswordEntry[];
-}
-

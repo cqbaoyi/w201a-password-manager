@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSession } from '../contexts/SessionContext';
 import styles from './SessionExpiryModal.module.css';
 
 interface SessionExpiryModalProps {
@@ -10,7 +11,8 @@ interface SessionExpiryModalProps {
 
 const SessionExpiryModal: React.FC<SessionExpiryModalProps> = ({ isOpen, timeRemaining }) => {
   const navigate = useNavigate();
-  const { logout, extendSession, formatTimeRemaining } = useAuth();
+  const { logout } = useAuth();
+  const { extendSession, formatTimeRemaining } = useSession();
 
   if (!isOpen) return null;
 

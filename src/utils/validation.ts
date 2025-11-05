@@ -12,12 +12,10 @@ import {
   MAX_URL_LENGTH,
   MAX_NOTES_LENGTH,
   MAX_INPUT_LENGTH,
-  MIN_SEARCH_QUERY_LENGTH,
-  MAX_SEARCH_QUERY_LENGTH,
   MIN_PASSWORD_GEN_LENGTH,
   MAX_PASSWORD_GEN_LENGTH,
 } from '../constants/config';
-import type { ValidationResult, SearchValidationResult, PasswordEntry, PasswordConfig, ImportData } from '../types';
+import type { ValidationResult, PasswordEntry, PasswordConfig } from '../types';
 
 /**
  * Validate master password
@@ -187,29 +185,6 @@ function hasRepeatedCharacters(password: string): boolean {
 }
 
 /**
- * Validate search query
- * @param query - Search query to validate
- * @returns Validation result
- */
-export function validateSearchQuery(query: string): SearchValidationResult {
-  if (typeof query !== 'string') {
-    return { isValid: false, errors: ['Search query must be a string'] };
-  }
-  
-  const sanitized = sanitizeInput(query, MAX_SEARCH_QUERY_LENGTH);
-  
-  if (sanitized.length === 0) {
-    return { isValid: true, query: '' };
-  }
-  
-  if (sanitized.length < MIN_SEARCH_QUERY_LENGTH) {
-    return { isValid: false, errors: [`Search query must be at least ${MIN_SEARCH_QUERY_LENGTH} characters`] };
-  }
-  
-  return { isValid: true, query: sanitized };
-}
-
-/**
  * Validate password generation configuration
  * @param config - Generation configuration
  * @returns Validation result
@@ -244,71 +219,4 @@ export function validatePasswordConfig(config: Partial<PasswordConfig>): Validat
   };
 }
 
-/**
- * Validate import data format
- * @param data - Import data to validate
- * @returns Validation result
- */
-export function validateImportData(data: unknown): ValidationResult {
-  const errors: string[] = [];
-  
-  if (!data || typeof data !== 'object') {
-    errors.push('Import data must be an object');
-    return { isValid: false, errors };
-  }
-  
-  const importData = data as Partial<ImportData>;
-  
-  if (!importData.salt || typeof importData.salt !== 'string') {
-    errors.push('Import data must contain a valid salt');
-  }
-  
-  if (!Array.isArray(importData.data)) {
-    errors.push('Import data must contain an array of password entries');
-  } else {
-    // Validate each entry
-    importData.data.forEach((entry, index) => {
-      if (!entry || typeof entry !== 'object') {
-        errors.push(`Entry at index ${index} must be an object`);
-        return;
-      }
-      
-      const typedEntry = entry as Partial<ImportData['data'][0]>;
-      
-      if (!typedEntry.id || typeof typedEntry.id !== 'string') {
-        errors.push(`Entry at index ${index} must have a valid ID`);
-      }
-      
-      if (!typedEntry.title || typeof typedEntry.title !== 'string') {
-        errors.push(`Entry at index ${index} must have a valid title`);
-      }
-      
-      if (!typedEntry.password || typeof typedEntry.password !== 'string') {
-        errors.push(`Entry at index ${index} must have a valid password`);
-      }
-    });
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-}
-
-/**
- * Format validation errors for display
- * @param errors - Array of error messages
- * @returns Formatted error message
- */
-export function formatValidationErrors(errors: string[]): string {
-  if (!Array.isArray(errors) || errors.length === 0) {
-    return '';
-  }
-  
-  if (errors.length === 1) {
-    return errors[0];
-  }
-  
-  return errors.map((error, index) => `${index + 1}. ${error}`).join('\n');
-}
 

@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSession } from '../contexts/SessionContext';
 import styles from './SettingsPage.module.css';
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { logout, displayTimeRemaining, formatTimeRemaining } = useAuth();
+  const { logout } = useAuth();
+  const { displayTimeRemaining, formatTimeRemaining } = useSession();
 
   const handleLogout = () => {
     logout();
