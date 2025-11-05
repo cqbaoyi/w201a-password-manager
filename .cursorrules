@@ -2,16 +2,20 @@
 
 ## Tech Stack
 - React 18+ with functional components and hooks
+- TypeScript for type safety
+- React Router for route management
 - CSS Modules for styling
 - Web Crypto API for encryption (AES-GCM, PBKDF2)
 - localStorage for data persistence
 
 ## Code Style
 - Use functional components with hooks
+- TypeScript: Use explicit types, interfaces for props, strict mode enabled
 - CSS Modules: `ComponentName.module.css`
 - File naming: PascalCase for components, camelCase for utilities
 - Always use `useCallback` for functions in useEffect dependencies
 - Use `useMemo` for expensive calculations
+- Separate providers: AuthProvider (authentication), SessionProvider (session management)
 
 ## Security (Critical)
 - Never log passwords or encryption keys
@@ -21,14 +25,19 @@
 - Use `crypto.getRandomValues()` for randomness
 
 ## React Patterns
-```javascript
+```typescript
 // Component structure
-const Component = ({ prop1, onAction }) => {
-  const [state, setState] = useState(initialValue);
+interface ComponentProps {
+  prop1: string;
+  onAction: (param: string) => void;
+}
+
+const Component: React.FC<ComponentProps> = ({ prop1, onAction }) => {
+  const [state, setState] = useState<string>('');
   
-  const handleAction = useCallback((param) => {
-    // Handle action
-  }, [dependency]);
+  const handleAction = useCallback((param: string) => {
+    onAction(param);
+  }, [onAction]);
   
   useEffect(() => {
     // Effect logic
@@ -37,6 +46,13 @@ const Component = ({ prop1, onAction }) => {
   return <div className={styles.container}>...</div>;
 };
 ```
+
+## Architecture
+- **Pages**: Route components in `src/pages/` (AuthGate, VaultPage, SettingsPage)
+- **Contexts**: Separate providers - AuthProvider (auth state), SessionProvider (session logic)
+- **Protected Routes**: Use ProtectedRoute wrapper for authenticated routes
+- **Constants**: Centralized in `src/constants/config.ts`
+- **Types**: Shared interfaces in `src/types/index.ts`
 
 ## CSS Guidelines
 - Mobile-first responsive design

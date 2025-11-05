@@ -9,12 +9,14 @@ A lightweight, client-side password manager built with React. Secure password st
 - **One-click password copying** with visual feedback
 - **Password generation** with configurable length and character types
 - **Search and filter** passwords by title, username, or URL
-- **Auto-lock** after 5 minutes of inactivity
+- **Auto-lock** after 5 minutes of inactivity with session expiry warning
+- **Route management** with protected routes
 - **Mobile-first responsive design**
 
 ## Technology Stack
 
-- React 18 with functional components and hooks
+- React 19 with TypeScript
+- React Router for route management
 - CSS Modules for styling
 - Web Crypto API for encryption
 - localStorage for data persistence
@@ -53,20 +55,31 @@ A lightweight, client-side password manager built with React. Secure password st
 
 ```
 src/
-├── components/          # React components
-│   ├── LoginScreen.js   # Master password entry
-│   ├── PasswordVault.js # Main vault interface
-│   ├── PasswordCard.js  # Individual password display
-│   ├── PasswordForm.js  # Add/edit password form
-│   ├── PasswordGenerator.js # Password generation UI
-│   └── CopyButton.js    # Copy to clipboard component
+├── pages/               # Route components
+│   ├── AuthGate.tsx     # Login/unlock page
+│   ├── VaultPage.tsx    # Main vault interface
+│   └── SettingsPage.tsx  # Settings page
+├── components/          # Reusable components
+│   ├── PasswordCard.tsx
+│   ├── PasswordForm.tsx
+│   ├── PasswordGenerator.tsx
+│   ├── CopyButton.tsx
+│   ├── ProtectedRoute.tsx
+│   └── SessionExpiryModal.tsx
+├── contexts/            # React Context providers
+│   ├── AuthContext.tsx  # Authentication state
+│   └── SessionContext.tsx # Session management
 ├── utils/               # Utility functions
-│   ├── crypto.js        # Encryption/decryption
-│   ├── storage.js       # localStorage wrapper
-│   ├── passwordGenerator.js # Password generation logic
-│   └── validation.js    # Input validation
-├── App.js              # Main application component
-└── index.js            # Application entry point
+│   ├── crypto.ts        # Encryption/decryption
+│   ├── storage.ts       # localStorage wrapper
+│   ├── passwordGenerator.ts
+│   └── validation.ts
+├── constants/           # Configuration constants
+│   └── config.ts
+├── types/               # TypeScript definitions
+│   └── index.ts
+├── App.tsx             # Main app with routing
+└── index.tsx           # Entry point
 ```
 
 ## Browser Requirements
@@ -74,6 +87,11 @@ src/
 - Chrome 60+, Firefox 57+, Safari 11+, Edge 79+
 - Web Crypto API support
 - localStorage support
+
+## Future Improvements
+
+- **Virtual list**: For handling large numbers of password entries efficiently. Not currently needed as the project doesn't expect users to store large numbers of passwords.
+- **Debounce and throttle**: For optimizing search input and user activity tracking. Not currently needed due to the expected scale of password entries.
 
 ---
 
