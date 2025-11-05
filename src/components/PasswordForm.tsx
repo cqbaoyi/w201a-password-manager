@@ -2,16 +2,32 @@ import React, { useState, useEffect } from 'react';
 import PasswordGenerator from './PasswordGenerator';
 import { validatePasswordEntry } from '../utils/validation';
 import styles from './PasswordForm.module.css';
+import type { PasswordEntry } from '../types';
 
-const PasswordForm = ({ password, onSave, onCancel, encryptionKey }) => {
-  const [formData, setFormData] = useState({
+interface PasswordFormProps {
+  password?: PasswordEntry | null;
+  onSave: (passwordData: Partial<PasswordEntry>) => Promise<void>;
+  onCancel: () => void;
+  encryptionKey: CryptoKey;
+}
+
+interface FormData {
+  title: string;
+  username: string;
+  password: string;
+  url: string;
+  notes: string;
+}
+
+const PasswordForm: React.FC<PasswordFormProps> = ({ password, onSave, onCancel, encryptionKey }) => {
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     username: '',
     password: '',
     url: '',
     notes: ''
   });
-  const [errors, setErrors] = useState([]);
+  const [errors, setErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -30,7 +46,7 @@ const PasswordForm = ({ password, onSave, onCancel, encryptionKey }) => {
     }
   }, [password]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -43,7 +59,7 @@ const PasswordForm = ({ password, onSave, onCancel, encryptionKey }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
     setIsLoading(true);
@@ -66,7 +82,7 @@ const PasswordForm = ({ password, onSave, onCancel, encryptionKey }) => {
     }
   };
 
-  const handlePasswordGenerated = (generatedPassword) => {
+  const handlePasswordGenerated = (generatedPassword: string) => {
     setFormData(prev => ({
       ...prev,
       password: generatedPassword
@@ -264,3 +280,4 @@ const PasswordForm = ({ password, onSave, onCancel, encryptionKey }) => {
 };
 
 export default PasswordForm;
+

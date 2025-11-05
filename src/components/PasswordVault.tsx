@@ -1,25 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getVaultData, addPasswordEntry, updatePasswordEntry, deletePasswordEntry } from '../utils/storage';
-import { decryptPasswordEntry } from '../utils/crypto';
+import { decryptPasswordEntry, encryptPasswordEntry } from '../utils/crypto';
 import PasswordCard from './PasswordCard';
 import PasswordForm from './PasswordForm';
 import styles from './PasswordVault.module.css';
+import type { PasswordEntry } from '../types';
 
-const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) => {
-  const [passwords, setPasswords] = useState([]);
-  const [filteredPasswords, setFilteredPasswords] = useState([]);
+interface PasswordVaultProps {
+  encryptionKey: CryptoKey;
+  onLogout: () => void;
+  timeRemaining: number | null;
+  formatTime: (milliseconds: number) => string;
+}
+
+type SortBy = 'title' | 'username' | 'url' | 'created' | 'updated';
+
+const PasswordVault: React.FC<PasswordVaultProps> = ({ 
+  encryptionKey, 
+  onLogout, 
+  timeRemaining, 
+  formatTime 
+}) => {
+  const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
+  const [filteredPasswords, setFilteredPasswords] = useState<PasswordEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('title');
+  const [sortBy, setSortBy] = useState<SortBy>('title');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingPassword, setEditingPassword] = useState(null);
+  const [editingPassword, setEditingPassword] = useState<PasswordEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadPasswords = useCallback(async () => {
     try {
       setIsLoading(true);
       const encryptedPasswords = getVaultData();
-      const decryptedPasswords = [];
+      const decryptedPasswords: PasswordEntry[] = [];
 
       for (const encryptedPassword of encryptedPasswords) {
         try {
@@ -64,9 +79,9 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
         case 'url':
           return (a.url || '').localeCompare(b.url || '');
         case 'created':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'updated':
-          return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+          return new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime();
         default:
           return 0;
       }
@@ -85,14 +100,16 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
     filterAndSortPasswords();
   }, [filterAndSortPasswords]);
 
-  const handleAddPassword = async (passwordData) => {
+  const handleAddPassword = async (passwordData: Partial<PasswordEntry>) => {
     try {
-      const newPassword = {
+      const newPassword: PasswordEntry = {
         ...passwordData,
         id: crypto.randomUUID(),
         createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
+        updatedAt: Date.now(),
+        title: passwordData.title || '',
+        password: passwordData.password || '',
+      } as PasswordEntry;
 
       // Encrypt the password
       const encryptedPassword = await encryptPasswordEntry(newPassword, encryptionKey);
@@ -109,11 +126,13 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
     }
   };
 
-  const handleEditPassword = async (id, updatedData) => {
+  const handleEditPassword = async (passwordData: Partial<PasswordEntry>) => {
+    if (!editingPassword) return;
+    
     try {
-      const updatedPassword = {
-        ...updatedData,
-        id,
+      const updatedPassword: PasswordEntry = {
+        ...editingPassword,
+        ...passwordData,
         updatedAt: Date.now()
       };
 
@@ -121,11 +140,11 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
       const encryptedPassword = await encryptPasswordEntry(updatedPassword, encryptionKey);
       
       // Update in storage
-      updatePasswordEntry(id, encryptedPassword);
+      updatePasswordEntry(editingPassword.id, encryptedPassword);
       
       // Update local state
       setPasswords(prev => 
-        prev.map(pwd => pwd.id === id ? updatedPassword : pwd)
+        prev.map(pwd => pwd.id === editingPassword.id ? updatedPassword : pwd)
       );
       setEditingPassword(null);
     } catch (error) {
@@ -134,7 +153,7 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
     }
   };
 
-  const handleDeletePassword = async (id) => {
+  const handleDeletePassword = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this password?')) {
       return;
     }
@@ -151,12 +170,12 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
     }
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as SortBy);
   };
 
   const clearError = () => {
@@ -290,10 +309,5 @@ const PasswordVault = ({ encryptionKey, onLogout, timeRemaining, formatTime }) =
   );
 };
 
-// Helper function to encrypt password entry
-const encryptPasswordEntry = async (entry, key) => {
-  const { encryptPasswordEntry } = await import('../utils/crypto');
-  return encryptPasswordEntry(entry, key);
-};
-
 export default PasswordVault;
+

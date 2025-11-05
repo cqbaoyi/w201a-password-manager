@@ -2,18 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import LoginScreen from './components/LoginScreen';
 import PasswordVault from './components/PasswordVault';
 import { getSessionTimeout, setSessionTimeout } from './utils/storage';
+import {
+  SESSION_DURATION,
+  WARNING_TIME,
+  ACTIVITY_RESET_THROTTLE,
+  DISPLAY_UPDATE_INTERVAL,
+  ERROR_DISPLAY_DURATION,
+} from './constants/config';
 import './App.css';
 
-const App = () => {
+const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [encryptionKey, setEncryptionKey] = useState(null);
-  const [error, setError] = useState(null);
-  const [sessionTimeout, setSessionTimeoutState] = useState(null);
-  const [displayTimeRemaining, setDisplayTimeRemaining] = useState(null);
-
-  // Session management
-  const SESSION_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-  const WARNING_TIME = 1 * 60 * 1000; // 1 minute warning
+  const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionTimeout, setSessionTimeoutState] = useState<number | null>(null);
+  const [displayTimeRemaining, setDisplayTimeRemaining] = useState<number | null>(null);
 
   const handleLogout = useCallback(() => {
     setEncryptionKey(null);
@@ -34,8 +37,8 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    let timeoutId;
-    let warningTimeoutId;
+    let timeoutId: NodeJS.Timeout;
+    let warningTimeoutId: NodeJS.Timeout;
 
     if (isAuthenticated && encryptionKey) {
       // Set up session timeout
@@ -58,19 +61,19 @@ const App = () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (warningTimeoutId) clearTimeout(warningTimeoutId);
     };
-  }, [isAuthenticated, encryptionKey, SESSION_DURATION, WARNING_TIME, handleLogout]);
+  }, [isAuthenticated, encryptionKey, handleLogout]);
 
   // Reset session timeout on user activity
   useEffect(() => {
     if (!isAuthenticated) return;
 
     let lastActivity = Date.now();
-    let resetTimeoutId;
+    let resetTimeoutId: NodeJS.Timeout;
 
     const resetSession = () => {
       const now = Date.now();
       // Only reset if it's been at least 1 second since last activity to prevent excessive resets
-      if (now - lastActivity < 1000) return;
+      if (now - lastActivity < ACTIVITY_RESET_THROTTLE) return;
       
       lastActivity = now;
       const newTimeout = now + SESSION_DURATION;
@@ -81,7 +84,7 @@ const App = () => {
     // Throttled reset function to prevent excessive updates
     const throttledReset = () => {
       if (resetTimeoutId) clearTimeout(resetTimeoutId);
-      resetTimeoutId = setTimeout(resetSession, 1000); // Reset at most once per second
+      resetTimeoutId = setTimeout(resetSession, ACTIVITY_RESET_THROTTLE);
     };
 
     // Listen for user activity
@@ -97,7 +100,7 @@ const App = () => {
       });
       if (resetTimeoutId) clearTimeout(resetTimeoutId);
     };
-  }, [isAuthenticated, SESSION_DURATION]);
+  }, [isAuthenticated]);
 
   // Update display time every second
   useEffect(() => {
@@ -115,29 +118,29 @@ const App = () => {
     updateDisplayTime();
 
     // Update every second
-    const intervalId = setInterval(updateDisplayTime, 1000);
+    const intervalId = setInterval(updateDisplayTime, DISPLAY_UPDATE_INTERVAL);
 
     return () => {
       clearInterval(intervalId);
     };
   }, [isAuthenticated, sessionTimeout]);
 
-  const handleLogin = (key) => {
+  const handleLogin = (key: CryptoKey) => {
     setEncryptionKey(key);
     setIsAuthenticated(true);
     setError(null);
   };
 
-  const handleError = (errorMessage) => {
+  const handleError = (errorMessage: string) => {
     setError(errorMessage);
-    setTimeout(() => setError(null), 5000); // Auto-clear error after 5 seconds
+    setTimeout(() => setError(null), ERROR_DISPLAY_DURATION);
   };
 
-  const getTimeUntilTimeout = () => {
+  const getTimeUntilTimeout = (): number | null => {
     return displayTimeRemaining && displayTimeRemaining > 0 ? displayTimeRemaining : null;
   };
 
-  const formatTimeRemaining = (milliseconds) => {
+  const formatTimeRemaining = (milliseconds: number): string => {
     const minutes = Math.floor(milliseconds / 60000);
     const seconds = Math.floor((milliseconds % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -168,7 +171,7 @@ const App = () => {
   return (
     <div className="app">
       <PasswordVault 
-        encryptionKey={encryptionKey} 
+        encryptionKey={encryptionKey!} 
         onLogout={handleLogout}
         timeRemaining={getTimeUntilTimeout()}
         formatTime={formatTimeRemaining}
@@ -178,3 +181,4 @@ const App = () => {
 };
 
 export default App;
+

@@ -3,34 +3,37 @@
  * Uses Web Crypto API for secure encryption/decryption
  */
 
-// Configuration
-const PBKDF2_ITERATIONS = 100000;
-const KEY_LENGTH = 256;
-const IV_LENGTH = 12; // 96 bits for AES-GCM
+import {
+  PBKDF2_ITERATIONS,
+  KEY_LENGTH,
+  IV_LENGTH,
+  SALT_LENGTH,
+} from '../constants/config';
+import type { PasswordEntry, EncryptedPasswordEntry } from '../types';
 
 /**
  * Generate a random salt for key derivation
- * @returns {Uint8Array} Random salt
+ * @returns Random salt
  */
-export function generateSalt() {
-  return crypto.getRandomValues(new Uint8Array(16));
+export function generateSalt(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
 }
 
 /**
  * Generate a random IV for encryption
- * @returns {Uint8Array} Random IV
+ * @returns Random IV
  */
-export function generateIV() {
+export function generateIV(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(IV_LENGTH));
 }
 
 /**
  * Derive encryption key from master password using PBKDF2
- * @param {string} masterPassword - The master password
- * @param {Uint8Array} salt - Salt for key derivation
- * @returns {Promise<CryptoKey>} Derived encryption key
+ * @param masterPassword - The master password
+ * @param salt - Salt for key derivation
+ * @returns Derived encryption key
  */
-export async function deriveKey(masterPassword, salt) {
+export async function deriveKey(masterPassword: string, salt: Uint8Array): Promise<CryptoKey> {
   const passwordBuffer = new TextEncoder().encode(masterPassword);
   
   const keyMaterial = await crypto.subtle.importKey(
@@ -60,12 +63,12 @@ export async function deriveKey(masterPassword, salt) {
 
 /**
  * Encrypt data using AES-GCM
- * @param {string} data - Data to encrypt
- * @param {CryptoKey} key - Encryption key
- * @param {Uint8Array} iv - Initialization vector
- * @returns {Promise<string>} Base64 encoded encrypted data
+ * @param data - Data to encrypt
+ * @param key - Encryption key
+ * @param iv - Initialization vector
+ * @returns Base64 encoded encrypted data
  */
-export async function encryptData(data, key, iv) {
+export async function encryptData(data: string, key: CryptoKey, iv: Uint8Array): Promise<string> {
   const dataBuffer = new TextEncoder().encode(data);
   
   const encryptedBuffer = await crypto.subtle.encrypt(
@@ -82,12 +85,12 @@ export async function encryptData(data, key, iv) {
 
 /**
  * Decrypt data using AES-GCM
- * @param {string} encryptedData - Base64 encoded encrypted data
- * @param {CryptoKey} key - Decryption key
- * @param {Uint8Array} iv - Initialization vector
- * @returns {Promise<string>} Decrypted data
+ * @param encryptedData - Base64 encoded encrypted data
+ * @param key - Decryption key
+ * @param iv - Initialization vector
+ * @returns Decrypted data
  */
-export async function decryptData(encryptedData, key, iv) {
+export async function decryptData(encryptedData: string, key: CryptoKey, iv: Uint8Array): Promise<string> {
   const encryptedBuffer = base64ToArrayBuffer(encryptedData);
   
   const decryptedBuffer = await crypto.subtle.decrypt(
@@ -104,11 +107,11 @@ export async function decryptData(encryptedData, key, iv) {
 
 /**
  * Encrypt a password entry
- * @param {Object} entry - Password entry to encrypt
- * @param {CryptoKey} key - Encryption key
- * @returns {Promise<Object>} Encrypted password entry
+ * @param entry - Password entry to encrypt
+ * @param key - Encryption key
+ * @returns Encrypted password entry
  */
-export async function encryptPasswordEntry(entry, key) {
+export async function encryptPasswordEntry(entry: PasswordEntry, key: CryptoKey): Promise<EncryptedPasswordEntry> {
   const iv = generateIV();
   
   const encryptedPassword = await encryptData(entry.password, key, iv);
@@ -124,11 +127,11 @@ export async function encryptPasswordEntry(entry, key) {
 
 /**
  * Decrypt a password entry
- * @param {Object} encryptedEntry - Encrypted password entry
- * @param {CryptoKey} key - Decryption key
- * @returns {Promise<Object>} Decrypted password entry
+ * @param encryptedEntry - Encrypted password entry
+ * @param key - Decryption key
+ * @returns Decrypted password entry
  */
-export async function decryptPasswordEntry(encryptedEntry, key) {
+export async function decryptPasswordEntry(encryptedEntry: EncryptedPasswordEntry, key: CryptoKey): Promise<PasswordEntry> {
   const iv = base64ToUint8Array(encryptedEntry.iv);
   
   const password = await decryptData(encryptedEntry.password, key, iv);
@@ -139,17 +142,21 @@ export async function decryptPasswordEntry(encryptedEntry, key) {
     password,
     notes,
     iv: undefined // Remove IV from decrypted entry
-  };
+  } as PasswordEntry;
 }
 
 /**
  * Verify master password by attempting to decrypt vault
- * @param {string} masterPassword - Master password to verify
- * @param {string} vaultSalt - Base64 encoded vault salt
- * @param {Array} vaultData - Encrypted vault data
- * @returns {Promise<boolean>} True if password is correct
+ * @param masterPassword - Master password to verify
+ * @param vaultSalt - Base64 encoded vault salt
+ * @param vaultData - Encrypted vault data
+ * @returns True if password is correct
  */
-export async function verifyMasterPassword(masterPassword, vaultSalt, vaultData) {
+export async function verifyMasterPassword(
+  masterPassword: string,
+  vaultSalt: string,
+  vaultData: EncryptedPasswordEntry[]
+): Promise<boolean> {
   try {
     const salt = base64ToUint8Array(vaultSalt);
     const key = await deriveKey(masterPassword, salt);
@@ -160,17 +167,17 @@ export async function verifyMasterPassword(masterPassword, vaultSalt, vaultData)
     }
     
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
 
 /**
  * Convert ArrayBuffer to Base64 string
- * @param {ArrayBuffer} buffer - ArrayBuffer to convert
- * @returns {string} Base64 string
+ * @param buffer - ArrayBuffer to convert
+ * @returns Base64 string
  */
-function arrayBufferToBase64(buffer) {
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
@@ -181,10 +188,10 @@ function arrayBufferToBase64(buffer) {
 
 /**
  * Convert Base64 string to ArrayBuffer
- * @param {string} base64 - Base64 string to convert
- * @returns {ArrayBuffer} ArrayBuffer
+ * @param base64 - Base64 string to convert
+ * @returns ArrayBuffer
  */
-function base64ToArrayBuffer(base64) {
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -195,10 +202,10 @@ function base64ToArrayBuffer(base64) {
 
 /**
  * Convert Base64 string to Uint8Array
- * @param {string} base64 - Base64 string to convert
- * @returns {Uint8Array} Uint8Array
+ * @param base64 - Base64 string to convert
+ * @returns Uint8Array
  */
-function base64ToUint8Array(base64) {
+function base64ToUint8Array(base64: string): Uint8Array {
   return new Uint8Array(base64ToArrayBuffer(base64));
 }
 

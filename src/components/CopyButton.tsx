@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import styles from './CopyButton.module.css';
 
-const CopyButton = ({ text, label = 'text', className = '', timeout = 2000 }) => {
+interface CopyButtonProps {
+  text: string;
+  label?: string;
+  className?: string;
+  timeout?: number;
+}
+
+const CopyButton: React.FC<CopyButtonProps> = ({ 
+  text, 
+  label = 'text', 
+  className = '', 
+  timeout = 2000 
+}) => {
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -74,3 +86,4 @@ const CopyButton = ({ text, label = 'text', className = '', timeout = 2000 }) =>
 };
 
 export default CopyButton;
+

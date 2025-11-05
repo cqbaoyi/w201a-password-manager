@@ -3,17 +3,24 @@
  * Uses crypto.getRandomValues() for cryptographically secure randomness
  */
 
+import {
+  DEFAULT_PASSWORD_LENGTH,
+  MIN_PASSWORD_GEN_LENGTH,
+  MAX_PASSWORD_GEN_LENGTH,
+} from '../constants/config';
+import type { PasswordConfig, PasswordStrength } from '../types';
+
 // Character sets for password generation
 const CHARACTER_SETS = {
   lowercase: 'abcdefghijklmnopqrstuvwxyz',
   uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   numbers: '0123456789',
   symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?'
-};
+} as const;
 
 // Default configuration
-const DEFAULT_CONFIG = {
-  length: 16,
+const DEFAULT_CONFIG: PasswordConfig = {
+  length: DEFAULT_PASSWORD_LENGTH,
   includeLowercase: true,
   includeUppercase: true,
   includeNumbers: true,
@@ -26,21 +33,15 @@ const AMBIGUOUS_CHARS = '0O1lI|';
 
 /**
  * Generate a cryptographically secure random password
- * @param {Object} config - Password generation configuration
- * @param {number} config.length - Password length (8-64)
- * @param {boolean} config.includeLowercase - Include lowercase letters
- * @param {boolean} config.includeUppercase - Include uppercase letters
- * @param {boolean} config.includeNumbers - Include numbers
- * @param {boolean} config.includeSymbols - Include symbols
- * @param {boolean} config.excludeAmbiguous - Exclude ambiguous characters
- * @returns {string} Generated password
+ * @param config - Password generation configuration
+ * @returns Generated password
  */
-export function generatePassword(config = {}) {
-  const finalConfig = { ...DEFAULT_CONFIG, ...config };
+export function generatePassword(config: Partial<PasswordConfig> = {}): string {
+  const finalConfig: PasswordConfig = { ...DEFAULT_CONFIG, ...config };
   
   // Validate configuration
-  if (finalConfig.length < 8 || finalConfig.length > 64) {
-    throw new Error('Password length must be between 8 and 64 characters');
+  if (finalConfig.length < MIN_PASSWORD_GEN_LENGTH || finalConfig.length > MAX_PASSWORD_GEN_LENGTH) {
+    throw new Error(`Password length must be between ${MIN_PASSWORD_GEN_LENGTH} and ${MAX_PASSWORD_GEN_LENGTH} characters`);
   }
   
   if (!finalConfig.includeLowercase && !finalConfig.includeUppercase && 
@@ -73,11 +74,11 @@ export function generatePassword(config = {}) {
 
 /**
  * Generate a random string using crypto.getRandomValues()
- * @param {number} length - String length
- * @param {string} charSet - Character set to use
- * @returns {string} Random string
+ * @param length - String length
+ * @param charSet - Character set to use
+ * @returns Random string
  */
-function generateRandomString(length, charSet) {
+function generateRandomString(length: number, charSet: string): string {
   const randomBytes = new Uint8Array(length);
   crypto.getRandomValues(randomBytes);
   
@@ -91,12 +92,12 @@ function generateRandomString(length, charSet) {
 
 /**
  * Ensure password contains at least one character from each selected type
- * @param {string} password - Generated password
- * @param {Object} config - Configuration
- * @param {string} charSet - Full character set
- * @returns {string} Password with guaranteed character types
+ * @param password - Generated password
+ * @param config - Configuration
+ * @param charSet - Full character set
+ * @returns Password with guaranteed character types
  */
-function ensureCharacterTypes(password, config, charSet) {
+function ensureCharacterTypes(password: string, config: PasswordConfig, charSet: string): string {
   const passwordArray = password.split('');
   let needsUpdate = false;
   
@@ -129,23 +130,23 @@ function ensureCharacterTypes(password, config, charSet) {
 
 /**
  * Check if password contains at least one character from a character set
- * @param {string} password - Password to check
- * @param {string} charSet - Character set to check for
- * @returns {boolean} True if password contains character from set
+ * @param password - Password to check
+ * @param charSet - Character set to check for
+ * @returns True if password contains character from set
  */
-function hasCharacterType(password, charSet) {
+function hasCharacterType(password: string, charSet: string): boolean {
   return charSet.split('').some(char => password.includes(char));
 }
 
 /**
  * Replace a random character in password with character from specific set
- * @param {Array} passwordArray - Password as character array
- * @param {string} fullCharSet - Full character set
- * @param {string} targetCharSet - Target character set
+ * @param passwordArray - Password as character array
+ * @param fullCharSet - Full character set
+ * @param targetCharSet - Target character set
  */
-function replaceRandomCharacter(passwordArray, fullCharSet, targetCharSet) {
+function replaceRandomCharacter(passwordArray: string[], fullCharSet: string, targetCharSet: string): void {
   // Find a position that can be replaced (not from target set)
-  const replaceablePositions = [];
+  const replaceablePositions: number[] = [];
   for (let i = 0; i < passwordArray.length; i++) {
     if (!targetCharSet.includes(passwordArray[i])) {
       replaceablePositions.push(i);
@@ -165,12 +166,12 @@ function replaceRandomCharacter(passwordArray, fullCharSet, targetCharSet) {
 
 /**
  * Calculate password strength score
- * @param {string} password - Password to analyze
- * @returns {Object} Strength analysis
+ * @param password - Password to analyze
+ * @returns Strength analysis
  */
-export function calculatePasswordStrength(password) {
+export function calculatePasswordStrength(password: string): PasswordStrength {
   let score = 0;
-  const analysis = {
+  const analysis: PasswordStrength = {
     length: password.length,
     hasLowercase: /[a-z]/.test(password),
     hasUppercase: /[A-Z]/.test(password),
@@ -212,10 +213,10 @@ export function calculatePasswordStrength(password) {
 
 /**
  * Check if password has sequential characters (abc, 123, etc.)
- * @param {string} password - Password to check
- * @returns {boolean} True if has sequential characters
+ * @param password - Password to check
+ * @returns True if has sequential characters
  */
-function hasSequentialCharacters(password) {
+function hasSequentialCharacters(password: string): boolean {
   const sequences = [
     'abcdefghijklmnopqrstuvwxyz',
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -235,5 +236,4 @@ function hasSequentialCharacters(password) {
     return false;
   });
 }
-
 

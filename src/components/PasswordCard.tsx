@@ -1,25 +1,32 @@
 import React, { useState } from 'react';
 import CopyButton from './CopyButton';
 import styles from './PasswordCard.module.css';
+import type { PasswordEntry } from '../types';
 
-const PasswordCard = ({ password, onEdit, onDelete }) => {
+interface PasswordCardProps {
+  password: PasswordEntry;
+  onEdit: (password: PasswordEntry) => void;
+  onDelete: (id: string) => void;
+}
+
+const PasswordCard: React.FC<PasswordCardProps> = ({ password, onEdit, onDelete }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleEdit = (e) => {
+  const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit(password);
   };
 
-  const handleDelete = (e) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(password.id);
   };
 
-  const formatDate = (timestamp) => {
+  const formatDate = (timestamp: number): string => {
     return new Date(timestamp).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -27,7 +34,7 @@ const PasswordCard = ({ password, onEdit, onDelete }) => {
     });
   };
 
-  const getDomainFromUrl = (url) => {
+  const getDomainFromUrl = (url: string): string => {
     try {
       const domain = new URL(url).hostname;
       return domain.replace('www.', '');
@@ -36,7 +43,7 @@ const PasswordCard = ({ password, onEdit, onDelete }) => {
     }
   };
 
-  const getPasswordStrength = (password) => {
+  const getPasswordStrength = (password: string): { level: string; color: string } => {
     let score = 0;
     if (password.length >= 8) score++;
     if (password.length >= 12) score++;
@@ -166,3 +173,4 @@ const PasswordCard = ({ password, onEdit, onDelete }) => {
 };
 
 export default PasswordCard;
+

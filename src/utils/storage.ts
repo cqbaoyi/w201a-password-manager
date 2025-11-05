@@ -3,34 +3,31 @@
  * Handles localStorage operations with error handling
  */
 
-const STORAGE_KEYS = {
-  VAULT_SALT: 'vault_salt',
-  VAULT_DATA: 'vault_data',
-  SESSION_TIMEOUT: 'session_timeout'
-};
+import { STORAGE_KEYS } from '../constants/config';
+import type { EncryptedPasswordEntry } from '../types';
 
 /**
  * Check if localStorage is available
- * @returns {boolean} True if localStorage is available
+ * @returns True if localStorage is available
  */
-function isLocalStorageAvailable() {
+function isLocalStorageAvailable(): boolean {
   try {
     const test = '__localStorage_test__';
     localStorage.setItem(test, test);
     localStorage.removeItem(test);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
 
 /**
  * Get data from localStorage with error handling
- * @param {string} key - Storage key
- * @param {*} defaultValue - Default value if key doesn't exist
- * @returns {*} Stored value or default value
+ * @param key - Storage key
+ * @param defaultValue - Default value if key doesn't exist
+ * @returns Stored value or default value
  */
-export function getStorageItem(key, defaultValue = null) {
+export function getStorageItem<T>(key: string, defaultValue: T): T {
   if (!isLocalStorageAvailable()) {
     console.warn('localStorage is not available');
     return defaultValue;
@@ -38,7 +35,7 @@ export function getStorageItem(key, defaultValue = null) {
 
   try {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
+    return item ? (JSON.parse(item) as T) : defaultValue;
   } catch (error) {
     console.error(`Error reading from localStorage key "${key}":`, error);
     return defaultValue;
@@ -47,11 +44,11 @@ export function getStorageItem(key, defaultValue = null) {
 
 /**
  * Set data in localStorage with error handling
- * @param {string} key - Storage key
- * @param {*} value - Value to store
- * @returns {boolean} True if successful
+ * @param key - Storage key
+ * @param value - Value to store
+ * @returns True if successful
  */
-export function setStorageItem(key, value) {
+export function setStorageItem(key: string, value: unknown): boolean {
   if (!isLocalStorageAvailable()) {
     console.warn('localStorage is not available');
     return false;
@@ -64,7 +61,7 @@ export function setStorageItem(key, value) {
     console.error(`Error writing to localStorage key "${key}":`, error);
     
     // Check if it's a quota exceeded error
-    if (error.name === 'QuotaExceededError') {
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
       throw new Error('Storage quota exceeded. Please export your data and clear some space.');
     }
     
@@ -74,10 +71,10 @@ export function setStorageItem(key, value) {
 
 /**
  * Remove data from localStorage
- * @param {string} key - Storage key
- * @returns {boolean} True if successful
+ * @param key - Storage key
+ * @returns True if successful
  */
-export function removeStorageItem(key) {
+export function removeStorageItem(key: string): boolean {
   if (!isLocalStorageAvailable()) {
     return false;
   }
@@ -93,9 +90,9 @@ export function removeStorageItem(key) {
 
 /**
  * Clear all vault data from localStorage
- * @returns {boolean} True if successful
+ * @returns True if successful
  */
-export function clearVaultData() {
+export function clearVaultData(): boolean {
   const success1 = removeStorageItem(STORAGE_KEYS.VAULT_SALT);
   const success2 = removeStorageItem(STORAGE_KEYS.VAULT_DATA);
   const success3 = removeStorageItem(STORAGE_KEYS.SESSION_TIMEOUT);
@@ -105,44 +102,44 @@ export function clearVaultData() {
 
 /**
  * Get vault salt from storage
- * @returns {string|null} Base64 encoded salt or null
+ * @returns Base64 encoded salt or null
  */
-export function getVaultSalt() {
-  return getStorageItem(STORAGE_KEYS.VAULT_SALT);
+export function getVaultSalt(): string | null {
+  return getStorageItem<string | null>(STORAGE_KEYS.VAULT_SALT, null);
 }
 
 /**
  * Set vault salt in storage
- * @param {string} salt - Base64 encoded salt
- * @returns {boolean} True if successful
+ * @param salt - Base64 encoded salt
+ * @returns True if successful
  */
-export function setVaultSalt(salt) {
+export function setVaultSalt(salt: string): boolean {
   return setStorageItem(STORAGE_KEYS.VAULT_SALT, salt);
 }
 
 /**
  * Get vault data from storage
- * @returns {Array} Array of encrypted password entries
+ * @returns Array of encrypted password entries
  */
-export function getVaultData() {
-  return getStorageItem(STORAGE_KEYS.VAULT_DATA, []);
+export function getVaultData(): EncryptedPasswordEntry[] {
+  return getStorageItem<EncryptedPasswordEntry[]>(STORAGE_KEYS.VAULT_DATA, []);
 }
 
 /**
  * Set vault data in storage
- * @param {Array} data - Array of encrypted password entries
- * @returns {boolean} True if successful
+ * @param data - Array of encrypted password entries
+ * @returns True if successful
  */
-export function setVaultData(data) {
+export function setVaultData(data: EncryptedPasswordEntry[]): boolean {
   return setStorageItem(STORAGE_KEYS.VAULT_DATA, data);
 }
 
 /**
  * Add a password entry to vault
- * @param {Object} entry - Password entry to add
- * @returns {boolean} True if successful
+ * @param entry - Password entry to add
+ * @returns True if successful
  */
-export function addPasswordEntry(entry) {
+export function addPasswordEntry(entry: EncryptedPasswordEntry): boolean {
   const vaultData = getVaultData();
   vaultData.push(entry);
   return setVaultData(vaultData);
@@ -150,11 +147,11 @@ export function addPasswordEntry(entry) {
 
 /**
  * Update a password entry in vault
- * @param {string} id - Entry ID to update
- * @param {Object} updatedEntry - Updated entry data
- * @returns {boolean} True if successful
+ * @param id - Entry ID to update
+ * @param updatedEntry - Updated entry data
+ * @returns True if successful
  */
-export function updatePasswordEntry(id, updatedEntry) {
+export function updatePasswordEntry(id: string, updatedEntry: Partial<EncryptedPasswordEntry>): boolean {
   const vaultData = getVaultData();
   const index = vaultData.findIndex(entry => entry.id === id);
   
@@ -168,10 +165,10 @@ export function updatePasswordEntry(id, updatedEntry) {
 
 /**
  * Delete a password entry from vault
- * @param {string} id - Entry ID to delete
- * @returns {boolean} True if successful
+ * @param id - Entry ID to delete
+ * @returns True if successful
  */
-export function deletePasswordEntry(id) {
+export function deletePasswordEntry(id: string): boolean {
   const vaultData = getVaultData();
   const filteredData = vaultData.filter(entry => entry.id !== id);
   
@@ -184,26 +181,26 @@ export function deletePasswordEntry(id) {
 
 /**
  * Get session timeout from storage
- * @returns {number} Session timeout timestamp
+ * @returns Session timeout timestamp
  */
-export function getSessionTimeout() {
-  return getStorageItem(STORAGE_KEYS.SESSION_TIMEOUT, 0);
+export function getSessionTimeout(): number {
+  return getStorageItem<number>(STORAGE_KEYS.SESSION_TIMEOUT, 0);
 }
 
 /**
  * Set session timeout in storage
- * @param {number} timeout - Session timeout timestamp
- * @returns {boolean} True if successful
+ * @param timeout - Session timeout timestamp
+ * @returns True if successful
  */
-export function setSessionTimeout(timeout) {
+export function setSessionTimeout(timeout: number): boolean {
   return setStorageItem(STORAGE_KEYS.SESSION_TIMEOUT, timeout);
 }
 
 /**
  * Check if vault exists (has salt and data)
- * @returns {boolean} True if vault exists
+ * @returns True if vault exists
  */
-export function vaultExists() {
+export function vaultExists(): boolean {
   const salt = getVaultSalt();
   const data = getVaultData();
   return salt !== null && Array.isArray(data);

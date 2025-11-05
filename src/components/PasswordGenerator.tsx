@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { generatePassword, calculatePasswordStrength } from '../utils/passwordGenerator';
 import { validatePasswordConfig } from '../utils/validation';
+import { DEFAULT_PASSWORD_LENGTH, MIN_PASSWORD_GEN_LENGTH, MAX_PASSWORD_GEN_LENGTH } from '../constants/config';
 import styles from './PasswordGenerator.module.css';
+import type { PasswordConfig, PasswordStrength } from '../types';
 
-const PasswordGenerator = ({ onGenerate, onClose }) => {
-  const [config, setConfig] = useState({
-    length: 16,
+interface PasswordGeneratorProps {
+  onGenerate: (password: string) => void;
+  onClose: () => void;
+}
+
+const PasswordGenerator: React.FC<PasswordGeneratorProps> = ({ onGenerate, onClose }) => {
+  const [config, setConfig] = useState<PasswordConfig>({
+    length: DEFAULT_PASSWORD_LENGTH,
     includeLowercase: true,
     includeUppercase: true,
     includeNumbers: true,
@@ -13,8 +20,8 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
     excludeAmbiguous: false
   });
   const [generatedPassword, setGeneratedPassword] = useState('');
-  const [strength, setStrength] = useState(null);
-  const [errors, setErrors] = useState([]);
+  const [strength, setStrength] = useState<PasswordStrength | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
 
   const generateNewPassword = useCallback(() => {
     try {
@@ -30,7 +37,7 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
       setGeneratedPassword(password);
     } catch (error) {
       console.error('Error generating password:', error);
-      setErrors([error.message || 'Failed to generate password']);
+      setErrors([error instanceof Error ? error.message : 'Failed to generate password']);
     }
   }, [config]);
 
@@ -47,7 +54,7 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
     }
   }, [generatedPassword]);
 
-  const handleConfigChange = (key, value) => {
+  const handleConfigChange = (key: keyof PasswordConfig, value: boolean | number) => {
     setConfig(prev => ({
       ...prev,
       [key]: value
@@ -59,12 +66,12 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
     }
   };
 
-  const handleLengthChange = (e) => {
-    const length = parseInt(e.target.value);
+  const handleLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const length = parseInt(e.target.value, 10);
     handleConfigChange('length', length);
   };
 
-  const handleCheckboxChange = (key) => {
+  const handleCheckboxChange = (key: keyof PasswordConfig) => {
     handleConfigChange(key, !config[key]);
   };
 
@@ -74,7 +81,7 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
     }
   };
 
-  const getStrengthColor = (strengthLevel) => {
+  const getStrengthColor = (strengthLevel: string): string => {
     switch (strengthLevel) {
       case 'weak': return '#ef4444';
       case 'medium': return '#f59e0b';
@@ -84,7 +91,7 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
     }
   };
 
-  const getStrengthWidth = (strengthLevel) => {
+  const getStrengthWidth = (strengthLevel: string): string => {
     switch (strengthLevel) {
       case 'weak': return '25%';
       case 'medium': return '50%';
@@ -118,7 +125,7 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
                 value={generatedPassword}
                 readOnly
                 className={styles.passwordInput}
-                onClick={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
               <button
                 onClick={() => navigator.clipboard.writeText(generatedPassword)}
@@ -159,15 +166,15 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
               </label>
               <input
                 type="range"
-                min="8"
-                max="64"
+                min={MIN_PASSWORD_GEN_LENGTH}
+                max={MAX_PASSWORD_GEN_LENGTH}
                 value={config.length}
                 onChange={handleLengthChange}
                 className={styles.slider}
               />
               <div className={styles.sliderLabels}>
-                <span>8</span>
-                <span>64</span>
+                <span>{MIN_PASSWORD_GEN_LENGTH}</span>
+                <span>{MAX_PASSWORD_GEN_LENGTH}</span>
               </div>
             </div>
 
@@ -259,3 +266,4 @@ const PasswordGenerator = ({ onGenerate, onClose }) => {
 };
 
 export default PasswordGenerator;
+

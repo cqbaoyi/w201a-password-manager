@@ -3,16 +3,23 @@ import { generateSalt, deriveKey, verifyMasterPassword } from '../utils/crypto';
 import { vaultExists, setVaultSalt, setVaultData, getVaultSalt, getVaultData } from '../utils/storage';
 import { validateMasterPassword } from '../utils/validation';
 import { calculatePasswordStrength } from '../utils/passwordGenerator';
+import { MIN_PASSWORD_LENGTH } from '../constants/config';
 import styles from './LoginScreen.module.css';
+import type { PasswordStrength } from '../types';
 
-const LoginScreen = ({ onLogin, onError }) => {
+interface LoginScreenProps {
+  onLogin: (key: CryptoKey) => void;
+  onError: (message: string) => void;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onError }) => {
   const [isNewVault, setIsNewVault] = useState(false);
   const [masterPassword, setMasterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [passwordStrength, setPasswordStrength] = useState(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
 
   useEffect(() => {
     // Check if vault exists
@@ -29,7 +36,7 @@ const LoginScreen = ({ onLogin, onError }) => {
     }
   }, [masterPassword, isNewVault]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
     setIsLoading(true);
@@ -42,7 +49,7 @@ const LoginScreen = ({ onLogin, onError }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      onError(error.message || 'An error occurred during login');
+      onError(error instanceof Error ? error.message : 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +123,7 @@ const LoginScreen = ({ onLogin, onError }) => {
     setShowPassword(!showPassword);
   };
 
-  const getPasswordStrengthColor = (strength) => {
+  const getPasswordStrengthColor = (strength: string | null): string => {
     if (!strength) return '#e2e8f0';
     switch (strength) {
       case 'weak': return '#ef4444';
@@ -127,7 +134,7 @@ const LoginScreen = ({ onLogin, onError }) => {
     }
   };
 
-  const getPasswordStrengthWidth = (strength) => {
+  const getPasswordStrengthWidth = (strength: string | null): string => {
     if (!strength) return '0%';
     switch (strength) {
       case 'weak': return '25%';
@@ -184,11 +191,11 @@ const LoginScreen = ({ onLogin, onError }) => {
               <div className={styles.requirementsContainer}>
                 <h4 className={styles.requirementsTitle}>Master Password Requirements:</h4>
                 <ul className={styles.requirementsList}>
-                  <li className={`${styles.requirement} ${masterPassword.length >= 8 ? styles.requirementMet : styles.requirementNotMet}`}>
+                  <li className={`${styles.requirement} ${masterPassword.length >= MIN_PASSWORD_LENGTH ? styles.requirementMet : styles.requirementNotMet}`}>
                     <span className={styles.requirementIcon}>
-                      {masterPassword.length >= 8 ? '✓' : '○'}
+                      {masterPassword.length >= MIN_PASSWORD_LENGTH ? '✓' : '○'}
                     </span>
-                    At least 8 characters long
+                    At least {MIN_PASSWORD_LENGTH} characters long
                   </li>
                   <li className={`${styles.requirement} ${/[a-z]/.test(masterPassword) ? styles.requirementMet : styles.requirementNotMet}`}>
                     <span className={styles.requirementIcon}>
@@ -293,3 +300,4 @@ const LoginScreen = ({ onLogin, onError }) => {
 };
 
 export default LoginScreen;
+
